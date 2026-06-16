@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/fondo_tarjeta"
+    android:layout_marginBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvTituloAcordeon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Título Criterio ▾"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/texto_titulo"/>
+
+        <LinearLayout
+            android:id="@+id/layoutContenido"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:id="@+id/tvDescripcion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Descripción..."
+                android:textSize="12sp"
+                android:textColor="@color/texto_subtitulo"
+                android:layout_marginBottom="8dp"/>
+
+            <RatingBar
+                android:id="@+id/rbCriterio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:attr/ratingBarStyleIndicator"
+                android:isIndicator="false"
+                android:stepSize="1.0"
+                android:numStars="5"
+                android:progressTint="#FFC107"/>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

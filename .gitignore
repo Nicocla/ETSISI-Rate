@@ -1,0 +1,21 @@
+node_modules/
+.env
+# Logs
+*.log
+npm-debug.log*
+
+# Android Studio / Gradle
+.gradle/
+build/
+*/build/
+local.properties
+.idea/
+*.iml
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Temporales
+*.tmp
+*.bak

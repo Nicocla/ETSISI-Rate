@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:layout_marginHorizontal="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@color/fondo_tarjeta">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvPuntuacionResena"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.5 ⭐"
+                android:textStyle="bold"
+                android:textColor="#FF9800"
+                android:background="#11FF9800"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvComentarioResena"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Comentario del alumno..."
+            android:textColor="@color/texto_titulo"
+            android:textSize="15sp"
+            android:layout_marginBottom="12dp"/>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView android:id="@+id/tvTagHorario" style="@style/TagResena" android:text="🕒 Horario: 5"/>
+                <TextView android:id="@+id/tvTagMaterial" style="@style/TagResena" android:text="📚 Material: 5"/>
+                <TextView android:id="@+id/tvTagAtencion" style="@style/TagResena" android:text="🙋‍♂️ Atención: 5"/>
+                <TextView android:id="@+id/tvTagTutorias" style="@style/TagResena" android:text="🎓 Tutorías: 5"/>
+                <TextView android:id="@+id/tvTagGuia" style="@style/TagResena" android:text="📋 Guía: 5"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

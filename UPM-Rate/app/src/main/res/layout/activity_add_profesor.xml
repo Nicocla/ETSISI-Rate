@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/fondo_pantalla"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Añadir Nuevo Profesor"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/texto_titulo"
+        android:layout_marginBottom="24dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etNombreProfesor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nombre y Apellidos"
+            android:inputType="textPersonName"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="32dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDepartamentoProfesor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Departamento (Ej: Sistemas Informáticos)"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/btnGuardarProfesor"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:text="Guardar Profesor"
+        android:textSize="16sp"
+        android:backgroundTint="#2196F3"
+        app:cornerRadius="8dp"/>
+
+</LinearLayout>

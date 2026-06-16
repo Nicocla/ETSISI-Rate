@@ -1,0 +1,47 @@
+// ARCHIVO: build.gradle (Module :app)
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.example.valoracionprofesores'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.example.valoracionprofesores"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    // --- LIBRERÍAS DE KOTLIN (Alineadas con la 1.9.0) ---
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+
+    // --- INTERFAZ ---
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // --- CONEXIÓN SERVIDOR ---
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'androidx.activity:activity:1.8.0'
+
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+
+    implementation("com.facebook.shimmer:shimmer:0.5.0")
+}
