@@ -2,127 +2,147 @@ package com.example.valoracionprofesores
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.Button
-import android.widget.Toast
+import androidx.activity.compose.setContent
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var etEmail: TextInputEditText
-    private lateinit var etCodigo: TextInputEditText
-    private lateinit var layoutCodigo: TextInputLayout
-    private lateinit var btnEnviar: Button
-    private lateinit var btnVerificar: Button
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
 
-        // Usamos el diseño que creamos en el mensaje anterior
-        setContentView(R.layout.activity_verificar_correo)
-
-        // 1. COMPROBAR SI YA ESTÁ LOGUEADO
-        // Si ya inició sesión antes, lo mandamos directo a la app sin pedir código
-        val prefs = getSharedPreferences("MisPreferencias", MODE_PRIVATE)
-        val emailGuardado = prefs.getString("EMAIL_USUARIO", null)
-        if (emailGuardado != null) {
-            irAMainActivity()
-            return // Detiene la ejecución de esta pantalla
-        }
-
-        // 2. VINCULAR VISTAS
-        etEmail = findViewById(R.id.etEmailVerificacion)
-        etCodigo = findViewById(R.id.etCodigoSecreto)
-        layoutCodigo = findViewById(R.id.layoutCodigo)
-        btnEnviar = findViewById(R.id.btnEnviarCodigo)
-        btnVerificar = findViewById(R.id.btnVerificarEntrar)
-
-        // 3. CLIC EN ENVIAR CÓDIGO
-        btnEnviar.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-
-            if (email.endsWith("@alumnos.upm.es") || email.endsWith("@upm.es") || email == "admin") {
-                pedirCodigoAlServidor(email)
-            } else {
-                Toast.makeText(this, "Usa un correo de la UPM", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // 4. CLIC EN VERIFICAR Y ENTRAR
-        btnVerificar.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            val codigo = etCodigo.text.toString().trim()
-
-            if (codigo.length == 4) {
-                comprobarCodigo(email, codigo)
-            } else {
-                Toast.makeText(this, "El código es de 4 números", Toast.LENGTH_SHORT).show()
+        setContent {
+            ETSISIRateTheme {
+                LoginScreen(
+                    onEnviarCodigo = { email, finalizarCarga, mostrarCampoCodigo ->
+                        pedirCodigoAlServidor(email, finalizarCarga, mostrarCampoCodigo)
+                    },
+                    onVerificarCodigo = { email, codigo, finalizarCarga, mostrarErrorCodigo ->
+                        comprobarCodigo(email, codigo, finalizarCarga, mostrarErrorCodigo)
+                    }
+                )
             }
         }
     }
 
-    private fun pedirCodigoAlServidor(email: String) {
-        btnEnviar.isEnabled = false
-        btnEnviar.text = "Enviando..."
+    private fun mostrarError(titulo: String, mensaje: String) {
+        AlertDialog.Builder(this)
+            .setTitle(titulo)
+            .setMessage(mensaje)
+            .setPositiveButton("Aceptar", null)
+            .show()
+    }
 
+    private fun pedirCodigoAlServidor(
+        email: String,
+        finalizarCarga: () -> Unit,
+        mostrarCampoCodigo: () -> Unit
+    ) {
         val apiService = RetrofitClient.instance.create(ApiService::class.java)
+
         apiService.enviarCodigo(email).enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                finalizarCarga()
+
                 if (response.isSuccessful) {
-                    Toast.makeText(this@LoginActivity, "Código enviado", Toast.LENGTH_SHORT).show()
-
-                    layoutCodigo.visibility = View.VISIBLE
-                    btnVerificar.visibility = View.VISIBLE
-
-                    etEmail.isEnabled = false
-                    btnEnviar.visibility = View.GONE
+                    mostrarCampoCodigo()
                 } else {
-                    btnEnviar.isEnabled = true
-                    btnEnviar.text = "Enviar Código"
-                    Toast.makeText(this@LoginActivity, "Error al enviar el correo", Toast.LENGTH_SHORT).show()
+                    mostrarError(
+                        "Error al enviar el código",
+                        "No se ha podido enviar el código de verificación. Código: ${response.code()}."
+                    )
                 }
             }
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
-                btnEnviar.isEnabled = true
-                btnEnviar.text = "Enviar Código"
-                Toast.makeText(this@LoginActivity, "Fallo de conexión", Toast.LENGTH_SHORT).show()
+                finalizarCarga()
+
+                mostrarError(
+                    "Fallo de conexión",
+                    "No se ha podido conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo."
+                )
             }
         })
     }
 
-    private fun comprobarCodigo(email: String, codigo: String) {
+    private fun comprobarCodigo(
+        email: String,
+        codigo: String,
+        finalizarCarga: () -> Unit,
+        mostrarErrorCodigo: () -> Unit
+    ) {
         val apiService = RetrofitClient.instance.create(ApiService::class.java)
-        apiService.verificarCodigo(email, codigo).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                if (response.isSuccessful) {
-                    // GUARDAR SESIÓN Y ROL
-                    val prefs = getSharedPreferences("MisPreferencias", MODE_PRIVATE)
-                    val editor = prefs.edit()
-                    editor.putString("EMAIL_USUARIO", email)
 
-                    // Lógica sencilla: si el email contiene "admin", es administrador
-                    if (email.contains("admin")) {
-                        editor.putBoolean("ES_ADMIN", true)
-                    } else {
-                        editor.putBoolean("ES_ADMIN", false)
+        apiService.verificarCodigo(email, codigo).enqueue(object : Callback<LoginResponse> {
+            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                finalizarCarga()
+
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    val token = loginResponse?.token
+
+                    if (token.isNullOrEmpty()) {
+                        mostrarError(
+                            "Error de sesión",
+                            "El servidor no ha devuelto un token de acceso."
+                        )
+                        return
                     }
-                    editor.apply()
+
+                    val prefs = getSharedPreferences("MisPreferencias", MODE_PRIVATE)
+
+                    prefs.edit()
+                        .putString("EMAIL_USUARIO", email)
+                        .putString("TOKEN_USUARIO", token)
+                        .putBoolean("ES_ADMIN", loginResponse.esAdmin)
+                        .apply()
 
                     irAMainActivity()
                 } else {
-                    Toast.makeText(this@LoginActivity, "Código incorrecto", Toast.LENGTH_SHORT).show()
+                    mostrarErrorCodigo()
                 }
             }
 
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                Toast.makeText(this@LoginActivity, "Fallo de conexión", Toast.LENGTH_SHORT).show()
+            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                finalizarCarga()
+
+                mostrarError(
+                    "Fallo de conexión",
+                    "No se ha podido verificar el código porque no hay conexión con el servidor."
+                )
             }
         })
     }
@@ -131,5 +151,220 @@ class LoginActivity : AppCompatActivity() {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()
+    }
+}
+
+@Composable
+fun LoginScreen(
+    onEnviarCodigo: (
+        email: String,
+        finalizarCarga: () -> Unit,
+        mostrarCampoCodigo: () -> Unit
+    ) -> Unit,
+    onVerificarCodigo: (
+        email: String,
+        codigo: String,
+        finalizarCarga: () -> Unit,
+        mostrarErrorCodigo: () -> Unit
+    ) -> Unit
+) {
+    val azulPrincipal = Color(0xFF2196F3)
+    val verdeVerificar = Color(0xFF4CAF50)
+
+    var email by remember { mutableStateOf("") }
+    var codigo by remember { mutableStateOf("") }
+
+    var errorEmail by remember { mutableStateOf<String?>(null) }
+    var errorCodigo by remember { mutableStateOf<String?>(null) }
+
+    var codigoVisible by remember { mutableStateOf(false) }
+    var emailBloqueado by remember { mutableStateOf(false) }
+
+    var enviandoCodigo by remember { mutableStateOf(false) }
+    var verificandoCodigo by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Verifica tu correo",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Usa tu correo @alumnos.upm.es o @upm.es para acceder a ETSISI Rate.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.DarkGray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = {
+                email = it
+                errorEmail = null
+            },
+            enabled = !emailBloqueado,
+            label = { Text("Correo universitario") },
+            isError = errorEmail != null,
+            supportingText = {
+                if (errorEmail != null) {
+                    Text(errorEmail ?: "")
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = azulPrincipal,
+                focusedLabelColor = azulPrincipal
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (!codigoVisible) {
+            Button(
+                onClick = {
+                    val emailLimpio = email.trim()
+                    errorEmail = null
+
+                    if (emailLimpio.isEmpty()) {
+                        errorEmail = "Introduce tu correo institucional"
+                        return@Button
+                    }
+
+                    val emailValido =
+                        emailLimpio.endsWith("@alumnos.upm.es") ||
+                                emailLimpio.endsWith("@upm.es") ||
+                                emailLimpio == "admin"
+
+                    if (!emailValido) {
+                        errorEmail = "Usa un correo institucional de la UPM"
+                        return@Button
+                    }
+
+                    enviandoCodigo = true
+
+                    onEnviarCodigo(
+                        emailLimpio,
+                        {
+                            enviandoCodigo = false
+                        },
+                        {
+                            codigoVisible = true
+                            emailBloqueado = true
+                        }
+                    )
+                },
+                enabled = !enviandoCodigo,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = azulPrincipal,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+                if (enviandoCodigo) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(22.dp)
+                    )
+                } else {
+                    Text("Enviar código")
+                }
+            }
+        }
+
+        if (codigoVisible) {
+            OutlinedTextField(
+                value = codigo,
+                onValueChange = {
+                    if (it.length <= 4) {
+                        codigo = it
+                        errorCodigo = null
+                    }
+                },
+                label = { Text("Código de 4 cifras") },
+                isError = errorCodigo != null,
+                supportingText = {
+                    if (errorCodigo != null) {
+                        Text(errorCodigo ?: "")
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = azulPrincipal,
+                    focusedLabelColor = azulPrincipal
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    val codigoLimpio = codigo.trim()
+                    errorCodigo = null
+
+                    if (codigoLimpio.length != 4) {
+                        errorCodigo = "El código debe tener 4 números"
+                        return@Button
+                    }
+
+                    verificandoCodigo = true
+
+                    onVerificarCodigo(
+                        email.trim(),
+                        codigoLimpio,
+                        {
+                            verificandoCodigo = false
+                        },
+                        {
+                            errorCodigo = "Código incorrecto"
+                        }
+                    )
+                },
+                enabled = !verificandoCodigo,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = verdeVerificar,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+                if (verificandoCodigo) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(22.dp)
+                    )
+                } else {
+                    Text("Verificar y entrar")
+                }
+            }
+        }
     }
 }

@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven { url "https://jitpack.io" } // <--- ESTA LÍNEA ES CLAVE
     }
 }
-rootProject.name = "UPM Rate"
+rootProject.name = "BD UPM Rate"
 include ':app'

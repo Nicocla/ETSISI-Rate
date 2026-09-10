@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -22,95 +22,141 @@ class VerificarCorreoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        supportActionBar?.hide() // Quitar barra superior
+        supportActionBar?.hide()
         setContentView(R.layout.activity_verificar_correo)
 
-        // Vincular vistas
         etEmail = findViewById(R.id.etEmailVerificacion)
         etCodigo = findViewById(R.id.etCodigoSecreto)
         layoutCodigo = findViewById(R.id.layoutCodigo)
         btnEnviar = findViewById(R.id.btnEnviarCodigo)
         btnVerificar = findViewById(R.id.btnVerificarEntrar)
 
-        // CLIC EN ENVIAR CÓDIGO
         btnEnviar.setOnClickListener {
             val email = etEmail.text.toString().trim()
+
+            etEmail.error = null
+
+            if (email.isEmpty()) {
+                etEmail.error = "Introduce tu correo institucional"
+                return@setOnClickListener
+            }
 
             if (email.endsWith("@alumnos.upm.es") || email.endsWith("@upm.es")) {
                 pedirCodigoAlServidor(email)
             } else {
-                Toast.makeText(this, "Por favor, usa un correo de la UPM", Toast.LENGTH_SHORT).show()
+                etEmail.error = "Usa un correo institucional de la UPM"
             }
         }
 
-        // CLIC EN VERIFICAR Y ENTRAR
         btnVerificar.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val codigo = etCodigo.text.toString().trim()
 
+            etCodigo.error = null
+
             if (codigo.length == 4) {
                 comprobarCodigo(email, codigo)
             } else {
-                Toast.makeText(this, "El código debe tener 4 números", Toast.LENGTH_SHORT).show()
+                etCodigo.error = "El código debe tener 4 números"
             }
         }
     }
 
+    private fun mostrarError(titulo: String, mensaje: String) {
+        AlertDialog.Builder(this)
+            .setTitle(titulo)
+            .setMessage(mensaje)
+            .setPositiveButton("Aceptar", null)
+            .show()
+    }
+
     private fun pedirCodigoAlServidor(email: String) {
-        // Desactivamos el botón para que no le den 20 veces
         btnEnviar.isEnabled = false
         btnEnviar.text = "Enviando..."
 
         val apiService = RetrofitClient.instance.create(ApiService::class.java)
+
         apiService.enviarCodigo(email).enqueue(object : Callback<Void> {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 if (response.isSuccessful) {
-                    Toast.makeText(this@VerificarCorreoActivity, "Revisa tu correo (o la consola)", Toast.LENGTH_LONG).show()
-
-                    // Mostramos la caja del código y el botón verde
                     layoutCodigo.visibility = View.VISIBLE
                     btnVerificar.visibility = View.VISIBLE
 
-                    // Bloqueamos el email para que no lo cambien
                     etEmail.isEnabled = false
                     btnEnviar.visibility = View.GONE
                 } else {
                     btnEnviar.isEnabled = true
                     btnEnviar.text = "Enviar Código"
-                    Toast.makeText(this@VerificarCorreoActivity, "Error al enviar el correo", Toast.LENGTH_SHORT).show()
+
+                    mostrarError(
+                        "Error al enviar el código",
+                        "No se ha podido enviar el código de verificación. Inténtalo de nuevo."
+                    )
                 }
             }
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
                 btnEnviar.isEnabled = true
                 btnEnviar.text = "Enviar Código"
-                Toast.makeText(this@VerificarCorreoActivity, "Fallo de conexión con el servidor", Toast.LENGTH_SHORT).show()
+
+                mostrarError(
+                    "Fallo de conexión",
+                    "No se ha podido conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo."
+                )
             }
         })
     }
 
     private fun comprobarCodigo(email: String, codigo: String) {
+        btnVerificar.isEnabled = false
+        btnVerificar.text = "Verificando..."
+
         val apiService = RetrofitClient.instance.create(ApiService::class.java)
-        apiService.verificarCodigo(email, codigo).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+
+        apiService.verificarCodigo(email, codigo).enqueue(object : Callback<LoginResponse> {
+            override fun onResponse(
+                call: Call<LoginResponse>,
+                response: Response<LoginResponse>
+            ) {
+                btnVerificar.isEnabled = true
+                btnVerificar.text = "Verificar y Entrar"
+
                 if (response.isSuccessful) {
-                    Toast.makeText(this@VerificarCorreoActivity, "¡Bienvenido!", Toast.LENGTH_SHORT).show()
+                    val loginResponse = response.body()
+                    val token = loginResponse?.token
 
-                    // Guardamos que el usuario ya está logueado en la memoria
+                    if (token.isNullOrEmpty()) {
+                        mostrarError(
+                            "Error de sesión",
+                            "El servidor no ha devuelto un token de acceso."
+                        )
+                        return
+                    }
+
                     val prefs = getSharedPreferences("MisPreferencias", MODE_PRIVATE)
-                    prefs.edit().putString("EMAIL_USUARIO", email).apply()
 
-                    // Viajamos a la pantalla principal
+                    prefs.edit()
+                        .putString("EMAIL_USUARIO", email)
+                        .putString("TOKEN_USUARIO", token)
+                        .putBoolean("ES_ADMIN", loginResponse.esAdmin)
+                        .apply()
+
                     val intent = Intent(this@VerificarCorreoActivity, MainActivity::class.java)
                     startActivity(intent)
-                    finish() // Cerramos la pantalla de verificación
+                    finish()
                 } else {
-                    Toast.makeText(this@VerificarCorreoActivity, "Código incorrecto", Toast.LENGTH_SHORT).show()
+                    etCodigo.error = "Código incorrecto"
                 }
             }
 
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                Toast.makeText(this@VerificarCorreoActivity, "Fallo de conexión", Toast.LENGTH_SHORT).show()
+            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                btnVerificar.isEnabled = true
+                btnVerificar.text = "Verificar y Entrar"
+
+                mostrarError(
+                    "Fallo de conexión",
+                    "No se ha podido verificar el código porque no hay conexión con el servidor."
+                )
             }
         })
     }

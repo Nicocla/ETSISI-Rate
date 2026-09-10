@@ -84,7 +84,7 @@ interface ApiService {
     fun verificarCodigo(
         @Field("email") email: String,
         @Field("codigo") codigo: String
-    ): Call<Void>
+    ): Call<LoginResponse>
 }
 
 // --- CLASES DE DATOS ---
@@ -129,4 +129,12 @@ data class RadarResponse(
     val avg_atencion: Float,
     val avg_tutorias: Float,
     val avg_guia: Float
+)
+
+data class LoginResponse(
+    val verificado: Boolean,
+    val mensaje: String?,
+    val token: String?,
+    val email: String?,
+    val esAdmin: Boolean
 )
